@@ -210,10 +210,8 @@ class DeliveryETATrainer:
 
                 model = lgb.LGBMRegressor(**params)
 
-                # Use callbacks for early stopping and pruning
+                # Use callbacks for early stopping only (pruning callback has compatibility issues)
                 callbacks = [lgb.early_stopping(stopping_rounds=50, verbose=False)]
-                if OPTUNA_INTEGRATION_AVAILABLE and LightGBMPruningCallback:
-                    callbacks.append(LightGBMPruningCallback(trial, "valid_0"))
 
                 model.fit(
                     X_tr, y_tr,
