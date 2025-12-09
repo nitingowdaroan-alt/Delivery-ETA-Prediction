@@ -33,8 +33,16 @@ import optuna
 import pandas as pd
 import xgboost as xgb
 from loguru import logger
-from optuna.integration import LightGBMPruningCallback
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score
+
+# Try to import optuna-integration, fall back gracefully
+try:
+    from optuna.integration import LightGBMPruningCallback
+    OPTUNA_INTEGRATION_AVAILABLE = True
+except ImportError:
+    OPTUNA_INTEGRATION_AVAILABLE = False
+    LightGBMPruningCallback = None
+    logger.warning("optuna-integration not found. Install with: pip install optuna-integration[lightgbm]")
 from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
@@ -203,10 +211,9 @@ class DeliveryETATrainer:
                 model = lgb.LGBMRegressor(**params)
 
                 # Use callbacks for early stopping and pruning
-                callbacks = [
-                    lgb.early_stopping(stopping_rounds=50, verbose=False),
-                    LightGBMPruningCallback(trial, "valid_0"),
-                ]
+                callbacks = [lgb.early_stopping(stopping_rounds=50, verbose=False)]
+                if OPTUNA_INTEGRATION_AVAILABLE and LightGBMPruningCallback:
+                    callbacks.append(LightGBMPruningCallback(trial, "valid_0"))
 
                 model.fit(
                     X_tr, y_tr,
