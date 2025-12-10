@@ -33,8 +33,10 @@ import optuna
 import pandas as pd
 import xgboost as xgb
 from loguru import logger
-from optuna.integration import LightGBMPruningCallback
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score
+
+# Note: optuna-integration[lightgbm] has compatibility issues with newer LightGBM
+# We use early stopping instead of pruning callbacks
 from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
@@ -202,11 +204,8 @@ class DeliveryETATrainer:
 
                 model = lgb.LGBMRegressor(**params)
 
-                # Use callbacks for early stopping and pruning
-                callbacks = [
-                    lgb.early_stopping(stopping_rounds=50, verbose=False),
-                    LightGBMPruningCallback(trial, "valid_0"),
-                ]
+                # Use callbacks for early stopping only (pruning callback has compatibility issues)
+                callbacks = [lgb.early_stopping(stopping_rounds=50, verbose=False)]
 
                 model.fit(
                     X_tr, y_tr,
